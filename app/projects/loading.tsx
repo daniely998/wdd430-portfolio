@@ -1,9 +1,9 @@
-// app/projects/opensource/loading.tsx
+// app/projects/loading.tsx
 export default function Loading() {
   return (
     <main className="container mx-auto px-4 py-12">
       <section className="text-center py-12">
-        <h1 className="text-4xl font-bold mb-4">Open Source Projects</h1>
+        <h1 className="text-4xl font-bold mb-4">Projects Overview</h1>
         <ul className="space-y-6">
           {[...Array(3)].map((_, i) => (
             <li
