@@ -1,40 +1,3 @@
-// // lib/projects-db.ts
-// export interface Project {
-//   id: number;
-//   title: string;
-//   description: string;
-//   type: 'opensource' | 'school';
-//   technologies: string[];
-//   link?: string;
-// }
-
-// export const projects: Project[] = [
-//   {
-//     id: 1,
-//     title: 'My First Open Source Contribution',
-//     description: 'A bug fix contributed to a popular library.',
-//     type: 'opensource',
-//     technologies: ['TypeScript', 'React'],
-//     link: 'https://github.com/example/repo'
-//   },
-//   {
-//     id: 2,
-//     title: 'Database Design Final Project',
-//     description: 'An ER diagram and normalized schema for a library system.',
-//     type: 'school',
-//     technologies: ['PostgreSQL', 'SQL']
-//   }
-// ];
-
-// export function getProjects(type?: string | null): Project[] {
-//   if (type) return projects.filter(p => p.type === type);
-//   return projects;
-// }
-
-// export function getProjectById(id: number): Project | null {
-//   return projects.find(p => p.id === id) ?? null;
-// }
-
 // lib/projects-db.ts
 import { sql } from '@vercel/postgres';
 
@@ -63,4 +26,34 @@ export async function getProjectById(id: number): Promise<Project | null> {
     SELECT * FROM projects WHERE id = ${id}
   `;
   return rows[0] ?? null;
+}
+
+const ITEMS_PER_PAGE = 6;
+
+export async function fetchFilteredProjects(query: string, currentPage: number): Promise<Project[]> {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const { rows } = await sql<Project>`
+    SELECT * FROM projects
+    WHERE title ILIKE ${"%" + query + "%"}
+       OR description ILIKE ${"%" + query + "%"}
+       OR ${query} = ANY(technologies)
+    ORDER BY id
+    LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset};
+  `;
+
+  return rows;
+}
+
+export async function fetchProjectsPages(query: string): Promise<number> {
+  const { rows } = await sql<{ count: number }>`
+    SELECT COUNT(*)::int AS count
+    FROM projects
+    WHERE title ILIKE ${"%" + query + "%"}
+       OR description ILIKE ${"%" + query + "%"}
+       OR ${query} = ANY(technologies);
+  `;
+
+  const count = rows[0]?.count ?? 0;
+  return Math.ceil(count / ITEMS_PER_PAGE);
 }
